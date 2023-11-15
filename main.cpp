@@ -70,13 +70,14 @@ void Player::generate_actions(){
 
 void MENU_PAGE::init(){
 	page = stage.addSprite("page", "paget", {{1280, 720, 0xFFFFFF}});
-	start_button = page.addButton("button", "start_game", {{250, 100, 0XC3C3C3}, {250, 100, 0X7F7F7F}}, "开始游戏");
+	start_button = page.addButton("button", "start_game", {{250, 100, 0XC3C3C3}, {250, 100, 0X7F7F7F}}, "��ʼ��Ϸ");
+	start_button.moveto(1280 / 2 - 125,320);
 	start_button.addEventListener(MOUSE_CLICK, start_call_back);
-	exit_button = page.addButton("button", "exit_game", {{250, 100, 0XC3C3C3}, {250, 100, 0X7F7F7F}}, "退出游戏");
+	exit_button = page.addButton("button", "exit_game", {{250, 100, 0XC3C3C3}, {250, 100, 0X7F7F7F}}, "�˳���Ϸ");
+	exit_button.moveto(1280 / 2 - 125,450);
 	exit_button.addEventListener(MOUSE_CLICK, exit_call_back);
 }
 void MENU_PAGE::main(){
-	//TODO:display
 	page.setVisible(true);
 }
 void MENU_PAGE::clear(){
@@ -85,7 +86,7 @@ void MENU_PAGE::clear(){
 }
 void MENU_PAGE::exit_call_back(displayObject *obj){
 	clear();
-	exit(0);
+	//TODO:quit()
 }
 void MENU_PAGE::start_call_back(displayObject *obj){
 	//TODO
@@ -94,6 +95,7 @@ void MENU_PAGE::start_call_back(displayObject *obj){
 
 void SETTING_PAGE::main(){
 	//TODO:display
+
 }
 void SETTING_PAGE::clear(){
 	//TODO:clear
@@ -105,7 +107,6 @@ void SETTING_PAGE::dec_player_call_back(displayObject *button){
 	player_number--;
 }
 void SETTING_PAGE::start_call_back(displayObject *button){
-	//TODO1:初始化玩家信息
 	PLAY_PAGE::player_list.clear();
 	for (int i = 1; i <= player_number; i++) PLAY_PAGE::player_list.push_back(new Player);
 	clear();
@@ -130,6 +131,10 @@ void PLAY_PAGE::out_game(Player *loser){
 }
 void PLAY_PAGE::win(Player *winner){
 	//TODO:display something
+}
+void PLAY_PAGE::clear(){
+	for (Player *i : player_list) delete i;
+	//TODO:
 }
 Block* PLAY_PAGE::select_block(std::function<bool(Block*)> filter){
 	//TODO:add eventlistener
@@ -166,6 +171,10 @@ Player* PLAY_PAGE::select_player(std::function<bool(Player*)> filter){
 }
 int main(){
 	init();
+	MENU_PAGE::init();
+	SETTING_PAGE::init();
+	PLAY_PAGE::init();
 	MENU_PAGE::main();
+	run();
 	return 0;
 }

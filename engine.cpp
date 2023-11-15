@@ -72,8 +72,8 @@ flxg::flxg(int _width,int _height,int _color){
 }
 void engine::init(){
     pool.init();
-    initgraph(1000,800);
-    buf.Resize(1000,800);
+    initgraph(1280,720);
+    buf.Resize(1280,720);
     _stage=new _m_baseobj(0,"stage","stage");
     _stage->parent=nullptr;
     stage=_stage;

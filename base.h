@@ -72,8 +72,8 @@ class Item{
 	std::function<void(Player*)> fun;
 };
 namespace MENU_PAGE{
-	sprite page;
-	button start_button, exit_button;
+	sprite page(nullptr);
+	button start_button(nullptr), exit_button(nullptr);
 	void init();
 	void main();
 	void start_call_back(displayObject *button);
@@ -82,6 +82,10 @@ namespace MENU_PAGE{
 }
 namespace SETTING_PAGE{
 	int player_number;
+	sprite page(nullptr);
+	button add_player_button(nullptr), dec_player_button(nullptr);
+	button start_button(nullptr);
+	void init();
 	void main();
 	void start_call_back(displayObject *button);
 	void add_player_call_back(displayObject *button);
@@ -91,11 +95,12 @@ namespace SETTING_PAGE{
 namespace PLAY_PAGE{
 	list<Player*> player_list;
 	list<Player*>::iterator player_in_turn;
+	void init();
 	void start_game();
 	void enter_next_turn();
 	void out_game(Player *loser);
 	void win(Player *winner);
-	// void end_game();
+	void clear();
 	Block* select_block(std::function<bool(Block*)>);
 	Player* select_player(std::function<bool(Player*)>);
 	void clear();
