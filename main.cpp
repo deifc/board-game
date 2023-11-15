@@ -89,12 +89,16 @@ void MENU_PAGE::exit_call_back(displayObject *obj){
 	//TODO:quit()
 }
 void MENU_PAGE::start_call_back(displayObject *obj){
-	//TODO
+	clear();
+	SETTING_PAGE::main();
 }
 
 
+void SETTING_PAGE::init(){
+
+}
 void SETTING_PAGE::main(){
-	//TODO:display
+	page.setVisible(true);
 
 }
 void SETTING_PAGE::clear(){
@@ -114,6 +118,8 @@ void SETTING_PAGE::start_call_back(displayObject *button){
 }
 
 
+void PLAY_PAGE::init(){
+}
 void PLAY_PAGE::start_game(){
 	player_in_turn = --player_list.end();
 	enter_next_turn();
