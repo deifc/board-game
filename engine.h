@@ -1,6 +1,8 @@
 #ifndef ENGINE
 #define ENGINE
 #include <bits/stdc++.h>
+
+#define VERSION 1.0
 namespace engine{
     const int MOUSE_CLICK=1,MOUSE_OVER=2,MOUSE_OFF=3,MOUSE_DOWN=4,MOUSE_UP=5;
     const int ENTER_FRAME=6;
@@ -18,7 +20,7 @@ namespace engine{
         std::string buf;
         int width,height,color;
         flxg(std::string x);
-        flxg(int _width,int height,int color);
+        flxg(int width,int height,int color);
     };
     class displayObject{
         public:
@@ -38,6 +40,7 @@ namespace engine{
         int getHeight();
         int getAngle();
         int getCurrFrame();
+        bool getVisible();
         std::list<eventListener>::iterator addEventListener(int type,std::function<void(displayObject*)> callback);
         std::string getType();
         std::string getName();
@@ -71,7 +74,6 @@ namespace engine{
         void gotoframe(int frame);
         button(displayObject ttfa);
     };
-    
     extern int mouseX,mouseY;
     extern displayObject stage;
     std::vector<displayObject> getChildrenByType(std::string type);

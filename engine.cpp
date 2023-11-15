@@ -1,5 +1,6 @@
 
 #include "engine.h"
+#include "threadpool.h"
 #include <graphics.h>
 using namespace std;
 namespace engine{
@@ -23,11 +24,11 @@ namespace engine{
         std::string type,name;
         std::string text;
         _m_baseobj(int _enginetype,std::string _type,std::string _name);
-        void updateinfo();
         int x,y,width,height,angle,visible;
         _m_baseobj* parent;
         std::list<_m_baseobj*> children;
         std::list<eventListener> evtListeners;
+        void updateinfo();
     };
     class _m_sprite:public _m_baseobj{
         public:
@@ -51,7 +52,10 @@ namespace engine{
     LOGFONT font;
     IMAGE buf;
     //std::function<void()> enterframe;
-    std::vector<std::list<eventListener>::iterator> todelete;
+    std::vector<std::pair<std::list<eventListener>*,
+        std::list<eventListener>::iterator>> todelete;
+    std::vector<std::future<void>> ftrcontainer;
+    ThreadPool pool;
     void eventDispatcher();
     void redraw();
 }
@@ -67,8 +71,9 @@ flxg::flxg(int _width,int _height,int _color){
     color=_color;
 }
 void engine::init(){
-    initgraph(1280,720);
-    buf.Resize(1280,720);
+    pool.init();
+    initgraph(1000,800);
+    buf.Resize(1000,800);
     _stage=new _m_baseobj(0,"stage","stage");
     _stage->parent=nullptr;
     stage=_stage;
@@ -108,6 +113,7 @@ displayObject displayObject::getparent(){
 }
 void recurdraw(_m_baseobj* rt,int x,int y){
     //cout<<rt<<endl;
+    if(!rt->visible)return;
     if(rt->enginetype==SPRITE){
         const _m_sprite* ttfa=(_m_sprite*)rt;
         const IMAGE *buf=&(ttfa->frames[ttfa->currentframe]);
@@ -131,26 +137,34 @@ void recurwork(_m_baseobj* rt){
     for(_m_baseobj* ttfa:rt->children)
         recurwork(ttfa);
 }
+void updatexy(){
+    RECT ttfa;
+    POINT pt;
+    GetWindowRect(GetHWnd(),&ttfa);
+    GetCursorPos(&pt);
+    mouseX=-ttfa.left+pt.x;
+    mouseY=-ttfa.top+pt.y;
+}
 void engine::redraw(){
     while(1){
-        flock.lock();
-        //cout<<"?"<<endl;
         clock_t framebegin=clock();
+        updatexy();
         recurwork(_stage);
-        //for(list<eventListener>::iterator iter:todelete)
-        //    evtListeners.erase(iter);
+        for(auto &f:todelete)
+            f.first->erase(f.second);
         todelete.clear();
         SetWorkingImage(&buf);
         setfillcolor(0x000000);
         fillrectangle(0,0,1000,800);
-        //cout<<222<<endl;
         recurdraw(_stage,0,0);
-        //cout<<"111"<<endl;
-        clock_t frameend=clock();
-        //cout<<frameend-framebegin<<endl;
         SetWorkingImage();
+        BeginBatchDraw();
         putimage(0,0,&buf);
-        flock.unlock();
+        EndBatchDraw();
+        for(int i=0;i<ftrcontainer.size();i++)
+            if(ftrcontainer[i].wait_for(chrono::milliseconds(0))==future_status::ready)
+                ftrcontainer.erase(ftrcontainer.begin()+i),i--;
+        clock_t frameend=clock();
         std::this_thread::sleep_for(chrono::milliseconds(16-(frameend-framebegin)));
     }  
 }
@@ -233,6 +247,7 @@ void engine::run(){
 }
 void engine::eventDispatcher(){
     int prevtime=0;
+    int mouseX=-1,mouseY=-1;
     while(1){
         ExMessage msg=getmessage(EX_MOUSE);
         flock.lock();
@@ -272,7 +287,10 @@ void engine::eventDispatcher(){
 engine::eventListener::eventListener(int _type,function<void(engine::displayObject*)> _callback,displayObject _target)
 :type(_type),callback(_callback),target(_target){}
 void engine::eventListener::operator ()(){
-    callback(&this->target);
+    //callback(&this->target);
+    if(this->type!=ENTER_FRAME)cout<<"begin"<<endl;
+    ftrcontainer.emplace_back(pool.submit(callback,&this->target));//(&this->target);
+    if(this->type!=ENTER_FRAME)cout<<"end"<<endl;
     modified=1;
 }
 engine::_m_baseobj::_m_baseobj(int _enginetype,std::string _type,std::string _name)
@@ -283,7 +301,6 @@ engine::_m_baseobj::_m_baseobj(int _enginetype,std::string _type,std::string _na
     visible=true;
 }
 void _m_baseobj::updateinfo(){
-    //cout<<frames.size()<<endl;
     if(enginetype==SPRITE){
         _m_sprite* f=(_m_sprite*)this;
         width=f->frames[f->currentframe].getwidth();
@@ -315,19 +332,14 @@ void displayObject::setVisible(bool visible){
     modified=1;
 }
 list<eventListener>::iterator displayObject::addEventListener(int type,function<void(displayObject*)> callback){
-    //cout<<"????"<<endl;
     base->evtListeners.emplace_back(type,callback,*this);
     return --base->evtListeners.end();
-    //cout<<self->name<<" "<<self->evtListeners.size()<<endl;
 }
-//void displayObject::removeEventListener(list<eventListener>::iterator iter){
-//    todelete.push_back(iter);
-//}
 void displayObject::removeEventListener(int type,std::function<void(displayObject*)> callback){
     for(auto it=base->evtListeners.begin();it!=base->evtListeners.end();++it)
         if(it->target.base==this->base&&it->type==type&&
         it->callback.target<void(displayObject*)>()==callback.target<void(displayObject*)>())
-            todelete.push_back(it);
+            todelete.push_back({&base->evtListeners,it});
 }
 int displayObject::getx(){
     return base->x;
@@ -357,7 +369,11 @@ void getxy(_m_baseobj* rt,int &x,int &y){
         rt=rt->parent;
     }
 }
+bool displayObject::getVisible(){
+    return base->visible;
+}
 bool displayObject::hitTestPoint(int x,int y){
+    if(!base->visible)return false;
     getxy(base,x,y);
     return 0<=x&&0<=y&&base->width>=x&&base->height>=y;
 }
