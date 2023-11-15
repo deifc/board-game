@@ -81,10 +81,15 @@ namespace MENU_PAGE{
 	void clear();
 }
 namespace SETTING_PAGE{
+	const int MAX_PLAYER = 6;
+	Coordinate player_pos;
 	int player_number;
 	sprite page(nullptr);
 	button add_player_button(nullptr), dec_player_button(nullptr);
 	button start_button(nullptr);
+	int player_tab_width, player_tab_height;
+	Coordinate player_tab_pos[MAX_PLAYER];
+	sprite player_tab[MAX_PLAYER];
 	void init();
 	void main();
 	void start_call_back(displayObject *button);

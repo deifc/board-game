@@ -21,7 +21,6 @@ bool Board::check_adjacent(Coordinate pos1, Coordinate pos2){
 	return false;
 }
 
-char buf[10000];
 Player::Player(){
 }
 bool Player::do_move(Coordinate target){
@@ -60,7 +59,7 @@ bool Player::do_rotate_anticlock(Coordinate target){
 void Player::generate_actions(){
 	//TODO:
 	static mt19937 mt_gen(time(0));
-	static uniform_int_distribution<> dis(0, 3);
+	static uniform_int_distribution<> dis(0, strength);
 	move_remain = dis(mt_gen);
 	swap_remain = dis(mt_gen);
 	rotate_remain = dis(mt_gen);
@@ -76,6 +75,7 @@ void MENU_PAGE::init(){
 	exit_button = page.addButton("button", "exit_game", {{250, 100, 0XC3C3C3}, {250, 100, 0X7F7F7F}}, "ÍË³öÓÎÏ·");
 	exit_button.moveto(1280 / 2 - 125,450);
 	exit_button.addEventListener(MOUSE_CLICK, exit_call_back);
+	page.setVisible(false);
 }
 void MENU_PAGE::main(){
 	page.setVisible(true);
@@ -95,24 +95,32 @@ void MENU_PAGE::start_call_back(displayObject *obj){
 
 
 void SETTING_PAGE::init(){
-
+	//TODO:
+	page = stage.addSprite("page", "setting page", {{1280, 720, 0xFFFFFF}});
+	player_tab_width = 400, player_tab_height = 100;
+	for (int i = 0; i < 3; i++){
+		player_tab_pos[2 * i + 0] = Coordinate(640 - 90 - player_tab_width, 320 + i * 130);
+		player_tab_pos[2 * i + 1] = Coordinate(640 + 90, 320 + i * 130);
+	}
+	for (int i = 0; i < MAX_PLAYER; i++){
+		player_tab[i] = page.addSprite("player tab", "player tab " + to_string(i), {{player_tab_width, player_tab_height, 0XC3C3C3}});
+		player_tab[i].moveto(player_tab_pos[i].x, player_tab_pos[i].y);
+	}
+	page.setVisible(false);
 }
 void SETTING_PAGE::main(){
 	page.setVisible(true);
-
 }
 void SETTING_PAGE::clear(){
 	//TODO:clear
 }
 void SETTING_PAGE::add_player_call_back(displayObject *button){
-	player_number++;
+	PLAY_PAGE::player_list.push_back(new Player);
 }
 void SETTING_PAGE::dec_player_call_back(displayObject *button){
-	player_number--;
+	PLAY_PAGE::player_list.push_back(new Player);
 }
 void SETTING_PAGE::start_call_back(displayObject *button){
-	PLAY_PAGE::player_list.clear();
-	for (int i = 1; i <= player_number; i++) PLAY_PAGE::player_list.push_back(new Player);
 	clear();
 	PLAY_PAGE::start_game();
 }
@@ -121,6 +129,12 @@ void SETTING_PAGE::start_call_back(displayObject *button){
 void PLAY_PAGE::init(){
 }
 void PLAY_PAGE::start_game(){
+	for (Player *player : player_list){
+		player->score = 2;
+		player->strength = 2;
+		player->luck = 2;
+		player->pos = Coordinate((BOARD_SIZE + 1) / 2, (BOARD_SIZE + 1) / 2);
+	}
 	player_in_turn = --player_list.end();
 	enter_next_turn();
 }
@@ -156,6 +170,7 @@ Block* PLAY_PAGE::select_block(std::function<bool(Block*)> filter){
 			}
 		}
 	}
+	//TODO:cancel selecting
 	while (target == nullptr) std::this_thread::sleep_for(chrono::milliseconds(20));
 	//TODO:clear eventlistener
 	return target;
@@ -171,6 +186,7 @@ Player* PLAY_PAGE::select_player(std::function<bool(Player*)> filter){
 			//TODO:add eventlistener
 		}
 	}
+	//TODO:cancel selecting
 	while (target == nullptr) std::this_thread::sleep_for(chrono::milliseconds(20));
 	//TODO:clear eventlistener
 	return target;
